@@ -1,0 +1,13 @@
+Flask
+Flask-Cors
+requests
+smbus2
+RPLCD
+RPi.GPIO
+tuya-connector-python
+gTTS
+pandas
+opencv-python
+numpy
+Pillow
+beautifulsoup4

@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>リアルタイムモニター</title>
+    
+    <!-- 外部CSSファイル (static/style.css) を読み込む -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<!-- bodyに 'monitor-page' クラスを付与し、CSSで専用スタイルを適用 -->
+<body class="monitor-page">
+
+    <!-- 
+      映像ストリーミングのエンドポイント (/video_feed) をimgタグのsrcに指定
+      これにより、Motion JPEG ストリームがここに描画される
+    -->
+    <img src="{{ url_for('video_feed') }}" alt="Loading camera stream...">
+</body>
+</html>

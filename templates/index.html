@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>スマートホーム管理</title>
+    
+    <!-- 外部CSSファイル (static/style.css) を読み込む -->
+    <!-- url_for を使って、Flaskが正しいパスを生成するようにする -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <!-- 画面全体のコンテナ -->
+    <div class="container">
+        <h1>スマートホーム管理</h1>
+        
+        <!-- === ステータス表示エリア === -->
+        <div class="status-display">
+            <!-- ステータス表示グリッド (3列) -->
+            <div class="status-grid">
+                <!-- 各ステータス項目 -->
+                <div class="status-item">
+                    <div class="label">カーテン</div>
+                    <span id="curtain-pos-value" class="value">--</span>
+                    <span id="curtain-pos-unit">%</span>
+                </div>
+                <div class="status-item">
+                    <div class="label">ﾌﾟﾛｼﾞｪｸﾀｰ</div>
+                    <span id="projector-status" class="value">--</span>
+                </div>
+                <div class="status-item">
+                    <div class="label">入力</div>
+                    <span id="hdmi-status" class="value">--</span>
+                </div>
+                <div class="status-item">
+                    <div class="label">ﾃﾞｰﾀ記録</div>
+                    <span id="logging-status" class="value">--</span>
+                </div>
+                <div class="status-item">
+                    <div class="label">モード</div>
+                    <span id="control-mode" class="value">--</span>
+                </div>
+                <div class="status-item">
+                    <div class="label">AIサーバー</div>
+                    <span id="ai-status" class="value">--</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- === 操作モード切替 === -->
+        <h2>操作モード</h2>
+        <div class="controls-grid">
+            <!-- onclick属性で、クリック時にJavaScriptのsetMode関数を呼び出す -->
+            <button class="btn" onclick="setMode('auto')">自動(AI)</button>
+            <button class="btn" onclick="setMode('manual')">手動</button>
+        </div>
+        
+        <!-- === カーテン操作 === -->
+        <h2>カーテン操作</h2>
+        <!-- キーパッド風ボタン (3列) -->
+        <div class="keypad">
+            <!-- data-scene属性に、サーバーに送信するシーン名を指定 -->
+            <button class="keypad-btn" data-scene="set0">0%<br><span class="subtext">全開</span></button>
+            <button class="keypad-btn" data-scene="set25">25%</button>
+            <button class="keypad-btn" data-scene="set50">50%<br><span class="subtext">半開</span></button>
+            <button class="keypad-btn" data-scene="set75">75%</button>
+            <button class="keypad-btn" data-scene="set100">100%<br><span class="subtext">全閉</span></button>
+        </div>
+        
+        <!-- === その他操作 === -->
+        <h2>その他</h2>
+        <!-- プロジェクター電源 -->
+        <div class="controls-grid">
+            <button class="btn" onclick="sendProjectorCommand('off')">ﾌﾟﾛｼﾞｪｸﾀｰ OFF</button>
+            <button class="btn" onclick="sendProjectorCommand('on')">ﾌﾟﾛｼﾞｪｸﾀｰ ON</button>
+        </div>
+        <!-- HDMI入力切替 -->
+        <div class="controls-grid" style="margin-top:10px;">
+            <button class="btn" onclick="sendHdmiCommand('hdmi1')">HDMI 1<br><span class="subtext">ChromeCast</span></button>
+            <button class="btn" onclick="sendHdmiCommand('hdmi2')">HDMI 2<br><span class="subtext">RaspberryPi</span></button>
+        </div>
+        <!-- データ記録モード切替 -->
+        <div class="controls-grid" style="margin-top:10px;">
+            <button class="btn" onclick="setLogging('off')">モデル学習 OFF</button>
+            <button class="btn" onclick="setLogging('on')">モデル学習 ON</button>
+        </div>
+        
+        <!-- === フッターリンク === -->
+        <div class="footer-link">
+            <!-- /log ページ (ログ表示) へのリンク -->
+            <a href="/log" target="_blank">操作ログを表示</a>
+        </div>
+    </div>
+    
+    <!-- 外部JavaScriptファイル (static/script.js) を読み込む -->
+    <!-- defer属性で、HTMLパース後に実行するようにする -->
+    <script src="{{ url_for('static', filename='script.js') }}" defer></script>
+</body>
+</html>

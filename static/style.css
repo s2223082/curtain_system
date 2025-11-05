@@ -1,0 +1,212 @@
+/* ================================================================== */
+/* 1. index.html (メインページ) の基本スタイル                        */
+/* ================================================================== */
+
+/* --- :root (色の定義) --- */
+/* CSS全体で使う変数 (色) を定義 */
+:root {
+    --base-bg: #22272e;         /* ページ全体の背景色 */
+    --surface-bg: #2d333b;      /* カードやステータス表示の背景色 */
+    --border-color: #444c56;    /* 境界線 */
+    --text-primary: #cdd9e5;    /* メインの文字色 */
+    --text-secondary: #768390;  /* 薄い文字色 (ラベルなど) */
+    --color-green: #8BC34A;     /* ON, 接続, 有効 */
+    --color-red: #f44336;       /* OFF, 切断, 無効 */
+    --color-blue: #03a9f4;      /* 自動モード */
+    --color-orange: #ff9800;    /* 手動モード */
+}
+
+/* --- body (ページ全体) --- */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; /* OS標準のフォント */
+    background-color: var(--base-bg);
+    color: var(--text-primary);
+    display: flex;              /* コンテンツを中央揃え (横) */
+    justify-content: center;
+    padding: 15px;
+    margin: 0;
+    font-size: 16px;
+}
+
+/* --- .container (メインコンテンツ) --- */
+.container {
+    width: 100%;
+    max-width: 400px; /* スマートフォンサイズに最適化 (最大幅400px) */
+}
+
+/* --- h1 (メインタイトル) --- */
+h1 {
+    text-align: center;
+    font-size: 24px;
+    margin-top: 0;
+    margin-bottom: 25px;
+}
+
+/* --- h2 (セクションタイトル) --- */
+h2 {
+    font-size: 16px;
+    color: var(--text-secondary);
+    margin-top: 25px;
+    margin-bottom: 10px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid var(--border-color); /* 下線 */
+}
+
+/* --- ステータス表示 --- */
+.status-display {
+    background-color: var(--surface-bg);
+    border-radius: 12px; /* 角丸 */
+    padding: 15px;
+    border: 1px solid var(--border-color);
+}
+.status-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* 3列のグリッドレイアウト */
+    gap: 10px; /* グリッド間の隙間 */
+    font-size: 16px;
+    text-align: center;
+}
+.status-item .label {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 5px;
+}
+.status-item .value {
+    font-weight: 600; /* 太字 */
+    font-size: 20px;
+}
+
+/* --- ボタン類 --- */
+.controls-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* 2列のグリッド */
+    gap: 10px;
+}
+.btn { /* 通常のボタン (モード切替, その他) */
+    padding: 14px;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer; /* マウスカーソルを指に */
+    border: 1px solid #555;
+    font-weight: 600;
+    background-color: #373E47;
+    color: var(--text-primary);
+    transition: background-color 0.2s; /* 押したときのアニメーション */
+}
+.btn:active { /* 押した瞬間のスタイル */
+    background-color: #444;
+}
+.btn .subtext { /* ボタン内の小さい説明テキスト */
+    display: block;
+    font-size: 12px;
+    font-weight: normal;
+    color: var(--text-secondary);
+    margin-top: 2px;
+}
+
+/* --- キーパッド (カーテン操作) --- */
+.keypad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* 3列のグリッド */
+    gap: 10px;
+}
+.keypad-btn { /* キーパッド専用ボタン */
+    padding: 10px 0;
+    background-color: #373E47;
+    color: var(--text-primary);
+    border-radius: 8px;
+    font-size: 24px;
+    border: 1px solid #555;
+    cursor: pointer;
+    font-weight: bold;
+    line-height: 1.2;
+}
+.keypad-btn:active { /* 押した瞬間のスタイル */
+    background-color: #444;
+}
+.keypad-btn .subtext {
+    font-size: 14px;
+    font-weight: normal;
+    color: var(--text-secondary);
+}
+
+/* --- フッター --- */
+.footer-link {
+    text-align: center;
+    margin-top: 25px;
+}
+.footer-link a {
+    color: var(--text-secondary);
+    text-decoration: none; /* 下線を消す */
+    font-size: 14px;
+}
+
+
+/* ================================================================== */
+/* 2. log.html (操作ログページ) のスタイル                            */
+/* ================================================================== */
+
+/* --- ログページの body --- */
+/* (index.html とは異なるスタイルを適用) */
+body.log-page { 
+    background-color: #121212; 
+    color: #e0e0e0; 
+    font-family: sans-serif; 
+    padding: 20px; 
+    display: block; /* flex解除 */
+    justify-content: normal;
+}
+
+/* --- ログページの h1 --- */
+body.log-page h1 { 
+    border-bottom: 1px solid #444; 
+    padding-bottom: 10px; 
+    text-align: left; /* 左揃え */
+    font-size: 2em;
+    margin-bottom: 20px;
+}
+
+/* --- ログテーブル (.log-table) --- */
+.log-table { 
+    width: 100%; 
+    border-collapse: collapse; /* 境界線を重ねる */
+}
+.log-table th, .log-table td { 
+    padding: 8px 12px; 
+    border: 1px solid #444; 
+    text-align: left; 
+}
+.log-table th { /* テーブルヘッダー */
+    background-color: #2c2c2e; 
+}
+.log-table tr:nth-child(even) { /* 偶数行 */
+    background-color: #1e1e1e; 
+}
+.log-table tr:nth-child(odd) { /* 奇数行 */
+    background-color: #242426; 
+}
+
+
+/* ================================================================== */
+/* 3. monitor.html (モニターページ) のスタイル                        */
+/* ================================================================== */
+
+/* --- モニターページの body --- */
+/* (index.html とは異なるスタイルを適用) */
+body.monitor-page { 
+    margin: 0; 
+    padding: 0; 
+    height: 100vh; /* 画面の高さ100% */
+    overflow: hidden; /* スクロールバーを消す */
+    background-color: #000; /* 黒背景 */
+    display: block; /* flex解除 */
+    justify-content: normal;
+}
+
+/* --- モニター映像 (img) --- */
+body.monitor-page img { 
+    display: block; 
+    width: 100%; 
+    height: 100%; 
+    object-fit: contain; /* アスペクト比を維持して、画面内に収まるように表示 */
+}

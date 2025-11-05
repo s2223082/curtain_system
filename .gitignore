@@ -1,0 +1,9 @@
+# 仮想環境フォルダ
+.venv/
+
+# Pythonのキャッシュファイル
+__pycache__/
+*.pyc
+
+# gTTS (音声合成) の一時ファイル
+temp_speech.mp3

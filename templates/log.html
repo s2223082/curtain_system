@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>操作ログ</title>
+    
+    <!-- 外部CSSファイル (static/style.css) を読み込む -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<!-- bodyに 'log-page' クラスを付与し、CSSで専用スタイルを適用 -->
+<body class="log-page">
+    <h1>操作ログ</h1>
+    
+    <!-- 
+      Python (Flask) の view_log 関数から渡された 'log_table' 変数 (HTML文字列) を展開する
+      '|safe' フィルターは、HTMLタグをエスケープせずにそのまま出力するために必要
+    -->
+    {{ log_table|safe }}
+</body>
+</html>

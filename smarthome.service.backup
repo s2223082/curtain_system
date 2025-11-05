@@ -1,0 +1,22 @@
+[Unit]
+Description=Smart Home Control Server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=curtain
+Group=audio
+WorkingDirectory=/home/curtain/curtain_system
+
+# ▼▼▼【修正点1】スクリプトへのフルパスを正しく記述 ▼▼▼
+ExecStart=/home/curtain/curtain_system/.venv/bin/python3 /home/curtain/curtain_system/smart_home_server.py
+
+# ▼▼▼【修正点2】音声再生の「許可証」を追加 ▼▼▼
+Environment="XDG_RUNTIME_DIR=/run/user/1000"
+
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
