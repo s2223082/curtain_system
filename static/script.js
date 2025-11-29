@@ -22,6 +22,10 @@ const statusMap = {
     ai: document.getElementById('ai-status')
 };
 
+// タイマー制御用変数
+let countdownSeconds = 0; // 残り秒数
+const timerElement = document.getElementById('ai-timer'); // 表示場所
+
 // --- 2. 非同期通信・UI更新関数 ---
 
 /**
@@ -72,6 +76,12 @@ async function updateStatus() {
         // --- AIサーバー接続状態の更新 ---
         statusMap.ai.textContent = data.ai_connection_status ? "接続" : "切断";
         statusMap.ai.style.color = data.ai_connection_status ? "var(--color-green)" : "var(--color-red)";
+
+        // カウントダウン変数の更新 (サーバーの時間に同期)
+        if (data.time_remaining !== undefined) {
+            countdownSeconds = data.time_remaining;
+            updateTimerDisplay(); // 即時反映
+        }
 
     } catch (e) {
         // 通信失敗時
@@ -156,8 +166,8 @@ async function setLogging(action) {
 
 // --- 3. イベントリスナーの登録 ---
 
-// クラス名 '.keypad-btn' を持つすべてのボタンにクリックイベントを登録
-document.querySelectorAll('.keypad-btn').forEach(button => {
+// クラス名 '.scene-btn' を持つすべてのボタンにクリックイベントを登録
+document.querySelectorAll('.scene-btn').forEach(button => {
     button.addEventListener('click', () => {
         // クリックされたボタンの 'data-scene' 属性の値を取得し、sendCommand に渡す
         sendCommand(button.getAttribute('data-scene'));
@@ -171,3 +181,21 @@ updateStatus();
 
 // 5秒ごと (5000ミリ秒) にステータス更新を繰り返す
 setInterval(updateStatus, 5000);
+
+// 1秒ごとにカウントダウンを減らして表示を更新するタイマー
+setInterval(() => {
+    if (countdownSeconds > 0) {
+        countdownSeconds--;
+        updateTimerDisplay();
+    }
+}, 1000);
+
+// 分・秒に変換して表示する関数
+function updateTimerDisplay() {
+    if (!timerElement) return;
+    const m = Math.floor(countdownSeconds / 60);
+    const s = countdownSeconds % 60;
+    // ゼロ埋め (例: 4分05秒)
+    const sStr = s.toString().padStart(2, '0');
+    timerElement.textContent = `${m}分${sStr}秒後`;
+}

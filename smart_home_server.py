@@ -71,7 +71,7 @@ BLUE_LED_PIN = 24   # 青色LED (自動モード時)
 
 # --- 外部API・デバイスID (ご自身の値に書き換えてください) ---
 # SwitchBot (API v1.0)
-SWITCHBOT_BASE_URL = "http://itap.watalab.info:8081/itap/v1"         # SwitchBot APIのエンドポイントURL
+SWITCHBOT_BASE_URL = "http://192.168.113.10:8081/itap/v1"         # SwitchBot APIのエンドポイントURL
 SWITCHBOT_ITAP_TOKEN = "FEIGlhOoslxo31VzC304xmOtgKEI30wmOheuWEZlwEh6cx+M4UUtrpjpkO7fUHOAzgUuUXX/xBUfpfD5noeAjzNpF1ig/CcBHa2H1cpg+NJhIHNaQ7GcklTpnU+cKVxDzxxLIuxbxyucmKoHL2FbkwSLCV7UYDVbEgi5yO6e2Brq+l93zSqOLYrQ3H8ikoIpWhxMt3T1SKdCwbe7hiMsV66SKRaur0CQtBXuJE1CFNcIsHlPR1KnjVJbdtuuPxMZSzpeOp/o5bXlW8yD+zaK3Yh2IXlyXZjuhfl7BOQCbjDm7DxB/DQYnOQsnxl+2r8iX0JBUP0bLRG1YgpSgDyDwv/vk0qb4Q1s1rmTzn8j5hq7SKLJ1bFqp1IY5WO8+KE6n20FHxG0Df0eSAoplVTcIFc5UomzxP4xZ1O932pQt1cqJXtQqSxgF0JMRWkxH4K4il8x1eHn6lD51d871sde6d9ey4kn+a9eIQH8TAnMsDqqfU7cAuMatUrDCdtxN6hQ0nsLLTg3uPuHTVSQN+Tog/d1tuktpovcqJ8qBAZUsMNlH9b//23NDyGGMZHqXpZf5PLrKUJBpUXf5uf6c/ZkzhUow7f6UHoI4t56XbHHEx6uol5xcdiVkOE9tdrNrB/12an2/Zj8YzaWI8vpbjVmEIgv4KymIlYCuhvQoTHnYM8b7lXwrsFsOAczOCnwWj8V1KGV1jN6fCxpQhcMnW6WzDObucpoJ5IvDX+mHmhzclGNSobpV+aWgv2IRvcfL11LgnDxE5TUOXT9RoaFCzz+uI7D04B3jHfK5OK8NCScvbVhy3KOLCAqVcxByPH0naLgvZNY8odmVtTDehspuqhfWlHWe4axT11UlhwT83alKc8XjDdIao3VVlJ/PWA4Fa1nDF7eSt3tKfVmEjxn+KzD7pvYshakOCSOdhA6PzZukL5u2W5jmwbWbGyvQIxVP4428qsnp/XWMG3kYkt/J2PffOnV2h6udUi6aOIJkPVd8maiGlE3g4EX4MLvdHoA1fi8lADVeDHugjNTzTU15U0vDcxQAWFSEPEAq0pfqMsGgvPMR2AOLeSxdeq16GNJQLqaNIk2RJj0OaXVbIStGI9TsQ=="       # 開発者トークン
 SWITCHBOT_OWNER_PASSWORD = "kait1104"   # パスワード
 HUB_DEVICE_ID = "B0E9FEAC62FC"              # SwitchBotハブミニのデバイスID
@@ -137,6 +137,9 @@ connected_ips = set()       # Web UIに接続したクライアントIPのセッ
 # --- スレッド制御フラグ ---
 stop_blinking_flag = threading.Event()      # 赤色LEDの点滅停止用
 stop_blue_blinking_flag = threading.Event() # 青色LEDの点滅停止用
+
+# 最後のログ記録時刻をグローバルで管理
+last_log_time = 0
 
 # --- BME280用キャリブレーションデータ (起動時に読み込む) ---
 dig_T1, dig_T2, dig_T3 = 0, 0, 0
@@ -1049,11 +1052,18 @@ def background_tasks_loop():
     メインのバックグラウンドタスク (キーパッド監視, LCD更新, ログ記録)
     このスレッドはビジーループ (time.sleep(0.05)) で高速に回り、キー入力を検知する
     """
-    global is_curtain_logging_paused, is_auto_mode, latest_sensor_data
+    global is_curtain_logging_paused, is_auto_mode, latest_sensor_data, last_log_time
     
     last_lcd_update = 0 # 最後のLCD更新時刻
-    last_log_time = 0   # 最後のセンサーログ記録時刻
     
+    # ★★★ 追加: 平均値計算用のサンプリング設定 ★★★
+    last_sampling_time = 0 # 最後のサンプリング時刻
+    sampling_interval = 10 # 10秒間隔
+    # データ蓄積用リスト
+    sensor_samples = {
+        "temp": [], "hum": [], "pres": [], "lux": []
+    }
+
     print("\n[Main] Background task loop started. Ready for input.")
     update_led_status() # LEDの初期状態を更新
 
@@ -1139,13 +1149,45 @@ def background_tasks_loop():
                     print(f"[Error] Failed to update LCD: {e}")
             last_lcd_update = time.time() # 更新時刻を記録
         
+        # ★★★ 追加: I2Cセンサーの10秒サンプリング処理 ★★★
+        if time.time() - last_sampling_time >= sampling_interval:
+            # I2Cセンサーから読み取り
+            t, h, p = read_bme280()
+            l = read_bh1750()
+            
+            # 取得できた場合のみリストに追加
+            if t is not None: sensor_samples["temp"].append(t)
+            if h is not None: sensor_samples["hum"].append(h)
+            if p is not None: sensor_samples["pres"].append(p)
+            if l is not None: sensor_samples["lux"].append(l)
+            
+            last_sampling_time = time.time()
+
         # --- 4. センサーログの記録 (LOG_INTERVAL_SECONDS ごと) ---
         if time.time() - last_log_time >= LOG_INTERVAL_SECONDS:
             current_time_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             print(f"\n[{current_time_str}] Starting periodic data log...")
             
-            # 1. すべてのセンサーデータを取得
+            # 1. すべてのセンサーデータを取得 (ハブなどは瞬時値、ローカルは後で上書き)
             data_for_csv = get_all_sensor_data()
+
+            # ★★★ 変更: I2Cセンサーデータを蓄積された平均値で上書き ★★★
+            # リストにデータがあれば平均値を計算し、リストをクリアしてリセットする
+            if sensor_samples["temp"]:
+                data_for_csv["local_temp"] = sum(sensor_samples["temp"]) / len(sensor_samples["temp"])
+                sensor_samples["temp"] = []
+            
+            if sensor_samples["hum"]:
+                data_for_csv["local_hum"] = sum(sensor_samples["hum"]) / len(sensor_samples["hum"])
+                sensor_samples["hum"] = []
+
+            if sensor_samples["pres"]:
+                data_for_csv["local_pres"] = sum(sensor_samples["pres"]) / len(sensor_samples["pres"])
+                sensor_samples["pres"] = []
+
+            if sensor_samples["lux"]:
+                data_for_csv["local_lux"] = sum(sensor_samples["lux"]) / len(sensor_samples["lux"])
+                sensor_samples["lux"] = []
 
             # 2. 取得したデータをAPI配信用にグローバル変数へコピー
             latest_sensor_data = data_for_csv.copy()
@@ -1155,7 +1197,16 @@ def background_tasks_loop():
             
             # 4. (ログ記録ONの時のみ) PCへ学習データを送信
             if not is_curtain_logging_paused:
-                data_for_ai = get_data_for_ai() # AI送信用の形式で再取得・整形
+                data_for_ai = get_data_for_ai() # AI送信用の形式で再取得
+                
+                # ★重要: get_data_for_aiはread_bme280を再実行してしまうため、
+                # ここで計算した平均値(data_for_csv)で値を差し替える
+                if data_for_ai:
+                    data_for_ai['local_temp_c'] = round(data_for_csv['local_temp'], 1) if data_for_csv['local_temp'] else None
+                    data_for_ai['local_humidity_percent'] = round(data_for_csv['local_hum'], 1) if data_for_csv['local_hum'] else None
+                    data_for_ai['local_pressure_hpa'] = round(data_for_csv['local_pres'], 1) if data_for_csv['local_pres'] else None
+                    data_for_ai['local_light_lux'] = round(data_for_csv['local_lux'], 1) if data_for_csv['local_lux'] else None
+
                 curtain_pos = data_for_csv.get('tuya_curtain_percent')
 
                 # データが正しく取れた場合のみ送信
@@ -1165,7 +1216,7 @@ def background_tasks_loop():
                     log_for_pc['tuya_curtain_percent'] = curtain_pos
                     send_data_to_pc_for_training(log_for_pc)
             
-            print(f"[{current_time_str}] Data logged.")
+            print(f"[{current_time_str}] Data logged (Average of 5min).")
             last_log_time = time.time() # 更新時刻を記録
 
         # --- 5. メインループの待機 ---
@@ -1197,6 +1248,11 @@ def get_status_for_app():
     
     curtain_status = get_tuya_curtain_status()
     
+    # 次回の送信までの残り時間を計算
+    elapsed = time.time() - last_log_time
+    remaining = LOG_INTERVAL_SECONDS - elapsed
+    if remaining < 0: remaining = 0
+
     # グローバル変数に保持されている最新の状態を返す
     return jsonify({
         'curtain_position': curtain_status['position'],
@@ -1204,7 +1260,8 @@ def get_status_for_app():
         'hdmi_status': hdmi_status,
         'logging_paused': is_curtain_logging_paused,
         'auto_mode': is_auto_mode,
-        'ai_connection_status': is_ai_connected
+        'ai_connection_status': is_ai_connected,
+        'time_remaining': int(remaining) # 次回ログ残り秒数(整数)
     })
 
 @app.route('/api/sensor_data', methods=['GET'])

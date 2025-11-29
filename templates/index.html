@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>スマートホーム管理</title>
-    
+    <title>インテリジェントウインドウシステム</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🪟</text></svg>">
     <!-- 外部CSSファイル (static/style.css) を読み込む -->
     <!-- url_for を使って、Flaskが正しいパスを生成するようにする -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
@@ -12,7 +12,7 @@
 <body>
     <!-- 画面全体のコンテナ -->
     <div class="container">
-        <h1>スマートホーム管理</h1>
+        <h1>インテリジェントウィンドウ管理</h1>
         
         <!-- === ステータス表示エリア === -->
         <div class="status-display">
@@ -33,7 +33,7 @@
                     <span id="hdmi-status" class="value">--</span>
                 </div>
                 <div class="status-item">
-                    <div class="label">ﾃﾞｰﾀ記録</div>
+                    <div class="label">モデル学習</div>
                     <span id="logging-status" class="value">--</span>
                 </div>
                 <div class="status-item">
@@ -44,6 +44,9 @@
                     <div class="label">AIサーバー</div>
                     <span id="ai-status" class="value">--</span>
                 </div>
+            </div>
+            <div id="countdown-area" style="margin-top: 15px; text-align: right; font-size: 12px; color: #768390; border-top: 1px solid #444c56; padding-top: 5px;">
+                AIサーバーデータ送信：<span id="ai-timer">--分--秒後</span>
             </div>
         </div>
         
@@ -56,15 +59,47 @@
         </div>
         
         <!-- === カーテン操作 === -->
-        <h2>カーテン操作</h2>
-        <!-- キーパッド風ボタン (3列) -->
-        <div class="keypad">
-            <!-- data-scene属性に、サーバーに送信するシーン名を指定 -->
-            <button class="keypad-btn" data-scene="set0">0%<br><span class="subtext">全開</span></button>
-            <button class="keypad-btn" data-scene="set25">25%</button>
-            <button class="keypad-btn" data-scene="set50">50%<br><span class="subtext">半開</span></button>
-            <button class="keypad-btn" data-scene="set75">75%</button>
-            <button class="keypad-btn" data-scene="set100">100%<br><span class="subtext">全閉</span></button>
+        <h2>ハニカムシェードカーテン操作</h2>
+        
+        <div class="scene-group group-day">
+            <div class="group-header">
+                <span class="group-icon">☀</span> 採光モード <span class="group-sub">(ロールスクリーン全開/プロジェクターOFF)</span>
+            </div>
+            <div class="scene-buttons day-grid">
+                <button class="scene-btn" data-scene="set0">
+                    <span class="scene-percent">0%</span>
+                    <span class="scene-subtext">シェード全開</span>
+                    <span class="badge red">映像OFF</span>
+                </button>
+                <button class="scene-btn" data-scene="set25">
+                    <span class="scene-percent">25%</span>
+                    <span class="scene-subtext">シェード25%閉</span>
+                    <span class="badge red">映像OFF</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="scene-group group-window">
+            <div class="group-header">
+                <span class="group-icon">🪟</span> 疑似ウィンドウモード <span class="group-sub">(ロールスクリーン40%閉/プロジェクターON)</span>
+            </div>
+            <div class="scene-buttons window-grid">
+                <button class="scene-btn" data-scene="set50">
+                    <span class="scene-percent">50%</span>
+                    <span class="scene-subtext">シェード半開</span>
+                    <span class="badge blue">映像ON</span>
+                </button>
+                <button class="scene-btn" data-scene="set75">
+                    <span class="scene-percent">75%</span>
+                    <span class="scene-subtext">シェード75%閉</span>
+                    <span class="badge blue">映像ON</span>
+                </button>
+                <button class="scene-btn" data-scene="set100">
+                    <span class="scene-percent">100%</span>
+                    <span class="scene-subtext">シェード全閉</span>
+                    <span class="badge blue">映像ON</span>
+                </button>
+            </div>
         </div>
         
         <!-- === その他操作 === -->
@@ -76,10 +111,10 @@
         </div>
         <!-- HDMI入力切替 -->
         <div class="controls-grid" style="margin-top:10px;">
-            <button class="btn" onclick="sendHdmiCommand('hdmi1')">HDMI 1<br><span class="subtext">ChromeCast</span></button>
-            <button class="btn" onclick="sendHdmiCommand('hdmi2')">HDMI 2<br><span class="subtext">RaspberryPi</span></button>
+            <button class="btn" onclick="sendHdmiCommand('hdmi1')">HDMI 1<br><span class="subtext">ChromeCast</br>（動画配信サービス）</span></button>
+            <button class="btn" onclick="sendHdmiCommand('hdmi2')">HDMI 2<br><span class="subtext">RaspberryPi</br>（リアルタイム映像）</span></button>
         </div>
-        <!-- データ記録モード切替 -->
+        <!-- モデル学習モード切替 -->
         <div class="controls-grid" style="margin-top:10px;">
             <button class="btn" onclick="setLogging('off')">モデル学習 OFF</button>
             <button class="btn" onclick="setLogging('on')">モデル学習 ON</button>

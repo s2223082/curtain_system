@@ -57,7 +57,7 @@ h2 {
     background-color: var(--surface-bg);
     border-radius: 12px; /* 角丸 */
     padding: 15px;
-    border: 1px solid var(--border-color);
+    border: 2px solid var(--border-color);
 }
 .status-grid {
     display: grid;
@@ -87,14 +87,21 @@ h2 {
     border-radius: 8px;
     font-size: 16px;
     cursor: pointer; /* マウスカーソルを指に */
-    border: 1px solid #555;
+    border: 2px solid var(--border-color);
     font-weight: 600;
     background-color: #373E47;
     color: var(--text-primary);
     transition: background-color 0.2s; /* 押したときのアニメーション */
 }
+
+/* 既存の .btn クラスの下あたりに追加/修正 */
+.btn:hover {
+    border-color: #81D4FA; /* ホバー時に水色枠 */
+    background-color: #3e4652;
+}
+
 .btn:active { /* 押した瞬間のスタイル */
-    background-color: #444;
+    transform: scale(0.9);
 }
 .btn .subtext { /* ボタン内の小さい説明テキスト */
     display: block;
@@ -104,32 +111,119 @@ h2 {
     margin-top: 2px;
 }
 
-/* --- キーパッド (カーテン操作) --- */
-.keypad {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr); /* 3列のグリッド */
-    gap: 10px;
-}
-.keypad-btn { /* キーパッド専用ボタン */
-    padding: 10px 0;
-    background-color: #373E47;
-    color: var(--text-primary);
-    border-radius: 8px;
-    font-size: 24px;
-    border: 1px solid #555;
-    cursor: pointer;
-    font-weight: bold;
-    line-height: 1.2;
-}
-.keypad-btn:active { /* 押した瞬間のスタイル */
-    background-color: #444;
-}
-.keypad-btn .subtext {
-    font-size: 14px;
-    font-weight: normal;
-    color: var(--text-secondary);
+/* ================================================================== */
+/* 新しいカーテン操作パネルのデザイン (修正版)                         */
+/* ================================================================== */
+
+/* グループ全体のコンテナ */
+.scene-group {
+    margin-bottom: 20px;
+    padding: 10px;
+    border-radius: 12px;
+    background-color: #262c36;
+    border: 2px solid var(--border-color);
+    /* 左側のラインは削除しました */
 }
 
+/* グループのヘッダー */
+.group-header {
+    font-size: 14px;
+    color: var(--text-primary);
+    margin-bottom: 10px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+}
+.group-icon {
+    font-size: 18px;
+    margin-right: 6px;
+}
+.group-sub {
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-left: 8px;
+    font-weight: normal;
+}
+
+/* ボタンのグリッドレイアウト */
+.scene-buttons {
+    display: grid;
+    gap: 10px;
+}
+.day-grid {
+    grid-template-columns: 1fr 1fr; /* 2列 */
+}
+.window-grid {
+    grid-template-columns: 1fr 1fr 1fr; /* 3列 */
+}
+
+/* --- シーンボタン共通スタイル --- */
+.scene-btn {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100px; /* 文字が増えたので 80px -> 100px に拡大 */
+    border-radius: 10px;
+    cursor: pointer;
+    background: #373E47;
+    color: var(--text-primary);
+    border: 2px solid var(--border-color);
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+/* ホバー時の設定 (水色枠) */
+.scene-btn:hover {
+    border-color: #81D4FA; /* 枠線が表示される */
+    background-color: #3e4652;
+}
+
+/* 押したとき */
+.scene-btn:active {
+    transform: scale(0.9);
+}
+
+/* --- 追加: シェード状態の説明テキスト --- */
+.scene-subtext {
+    font-size: 10px;        /* 小さめの文字 */
+    color: var(--text-secondary); /* 薄い色 */
+    margin-bottom: 6px;     /* バッジとの間隔 */
+    font-weight: normal;
+}
+
+/* 既存のスタイル（微調整） */
+.scene-percent {
+    font-size: 24px;
+    font-weight: bold;
+    line-height: 1;
+    margin-bottom: 4px; /* 下の間隔を少し詰める */
+    color: var(--text-primary);
+}
+
+/* --- バッジ (映像ON/OFF) --- */
+.badge {
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+}
+
+/* 映像OFF (赤バッジ) */
+.badge.red {
+    background-color: rgba(244, 67, 54, 0.15); /* 薄い赤背景 */
+    color: #ef9a9a; /* 薄い赤文字 */
+    border: 1px solid rgba(244, 67, 54, 0.4);
+}
+
+/* 映像ON (青バッジ) */
+.badge.blue {
+    background-color: rgba(3, 169, 244, 0.15); /* 薄い青背景 */
+    color: #81D4FA; /* 水色文字 */
+    border: 1px solid rgba(3, 169, 244, 0.4);
+}
 /* --- フッター --- */
 .footer-link {
     text-align: center;
