@@ -2,6 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>操作ログ</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📝</text></svg>">
     <!-- 外部CSSファイル (static/style.css) を読み込む -->
@@ -9,12 +10,32 @@
 </head>
 <!-- bodyに 'log-page' クラスを付与し、CSSで専用スタイルを適用 -->
 <body class="log-page">
-    <h1>操作ログ</h1>
-    
-    <!-- 
-      Python (Flask) の view_log 関数から渡された 'log_table' 変数 (HTML文字列) を展開する
-      '|safe' フィルターは、HTMLタグをエスケープせずにそのまま出力するために必要
-    -->
-    {{ log_table|safe }}
+    <div class="log-header">
+        <h1>操作ログ履歴</h1>
+        
+        <div class="pagination">
+            {% if has_prev %}
+                <a href="/log?page={{ current_page - 1 }}" class="page-btn">≪ 前へ(新しい)</a>
+            {% else %}
+                <span class="page-btn disabled">≪ 前へ</span>
+            {% endif %}
+
+            <span class="page-info">Page {{ current_page }}</span>
+
+            {% if has_next %}
+                <a href="/log?page={{ current_page + 1 }}" class="page-btn">次へ(古い) ≫</a>
+            {% else %}
+                <span class="page-btn disabled">次へ ≫</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="table-container">
+          <!-- 
+          Python (Flask) の view_log 関数から渡された 'log_table' 変数 (HTML文字列) を展開する
+          '|safe' フィルターは、HTMLタグをエスケープせずにそのまま出力するために必要
+          -->
+        {{ log_table|safe }}
+    </div>
 </body>
 </html>

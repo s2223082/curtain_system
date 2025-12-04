@@ -40,7 +40,7 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 # BeautifulSoup (天気情報スクレイピング)
 from bs4 import BeautifulSoup
-
+import math # ログCSVファイルページ数計算用
 
 # ==============================================================================
 # 2. ユーザー設定・定数定義
@@ -69,7 +69,7 @@ RED_PIN = 17        # 赤色LED (ログ記録OFF時)
 GREEN_PIN = 27      # 緑色LED (ログ記録ON時)
 BLUE_LED_PIN = 24   # 青色LED (自動モード時)
 
-# --- 外部API・デバイスID (ご自身の値に書き換えてください) ---
+# --- 外部API・デバイスID---
 # SwitchBot (API v1.0)
 SWITCHBOT_BASE_URL = "http://192.168.113.10:8081/itap/v1"         # SwitchBot APIのエンドポイントURL
 SWITCHBOT_ITAP_TOKEN = "FEIGlhOoslxo31VzC304xmOtgKEI30wmOheuWEZlwEh6cx+M4UUtrpjpkO7fUHOAzgUuUXX/xBUfpfD5noeAjzNpF1ig/CcBHa2H1cpg+NJhIHNaQ7GcklTpnU+cKVxDzxxLIuxbxyucmKoHL2FbkwSLCV7UYDVbEgi5yO6e2Brq+l93zSqOLYrQ3H8ikoIpWhxMt3T1SKdCwbe7hiMsV66SKRaur0CQtBXuJE1CFNcIsHlPR1KnjVJbdtuuPxMZSzpeOp/o5bXlW8yD+zaK3Yh2IXlyXZjuhfl7BOQCbjDm7DxB/DQYnOQsnxl+2r8iX0JBUP0bLRG1YgpSgDyDwv/vk0qb4Q1s1rmTzn8j5hq7SKLJ1bFqp1IY5WO8+KE6n20FHxG0Df0eSAoplVTcIFc5UomzxP4xZ1O932pQt1cqJXtQqSxgF0JMRWkxH4K4il8x1eHn6lD51d871sde6d9ey4kn+a9eIQH8TAnMsDqqfU7cAuMatUrDCdtxN6hQ0nsLLTg3uPuHTVSQN+Tog/d1tuktpovcqJ8qBAZUsMNlH9b//23NDyGGMZHqXpZf5PLrKUJBpUXf5uf6c/ZkzhUow7f6UHoI4t56XbHHEx6uol5xcdiVkOE9tdrNrB/12an2/Zj8YzaWI8vpbjVmEIgv4KymIlYCuhvQoTHnYM8b7lXwrsFsOAczOCnwWj8V1KGV1jN6fCxpQhcMnW6WzDObucpoJ5IvDX+mHmhzclGNSobpV+aWgv2IRvcfL11LgnDxE5TUOXT9RoaFCzz+uI7D04B3jHfK5OK8NCScvbVhy3KOLCAqVcxByPH0naLgvZNY8odmVtTDehspuqhfWlHWe4axT11UlhwT83alKc8XjDdIao3VVlJ/PWA4Fa1nDF7eSt3tKfVmEjxn+KzD7pvYshakOCSOdhA6PzZukL5u2W5jmwbWbGyvQIxVP4428qsnp/XWMG3kYkt/J2PffOnV2h6udUi6aOIJkPVd8maiGlE3g4EX4MLvdHoA1fi8lADVeDHugjNTzTU15U0vDcxQAWFSEPEAq0pfqMsGgvPMR2AOLeSxdeq16GNJQLqaNIk2RJj0OaXVbIStGI9TsQ=="       # 開発者トークン
@@ -80,7 +80,7 @@ SWITCHBOT_CURTAIN_DEVICE_ID = "B0E9FE7153C8" # SwitchBotカーテンのデバイ
 # Tuya Cloud (API)
 TUYA_ACCESS_ID = "gavwxscwwncxv895ugcx"             # Tuya Cloud API Access ID
 TUYA_ACCESS_KEY = "5b1b44c9155d4b38beefd39c1ec1e350"            # Tuya Cloud API Access Key
-TUYA_API_ENDPOINT = "https://openapi.tuyaus.com"          # APIエンドポイント (例: "https://openapi.tuyaus.com")
+TUYA_API_ENDPOINT = "https://openapi.tuyaus.com"          # APIエンドポイント
 TUYA_DEVICE_ID = "eb92b0bef13d30360ehncv"             # TuyaカーテンのデバイスID
 
 # TuyaデバイスのDPS (Data Point) Index
@@ -99,7 +99,6 @@ is_curtain_logging_paused = True # 起動時はモデル学習データ記録を
 LOG_CSV_FILE = 'smart_home_actions.log.csv' # 操作履歴用CSV
 
 # --- AI自動制御 ---
-# ★★★必ずご自身のPCのIPアドレスに変更してください★★★
 PC_AI_SERVER_URL = "http://192.168.113.10:10820/predict" 
 # 300秒 (5分) ごとにAI制御を実行
 AUTO_CONTROL_INTERVAL_SECONDS = 300  
@@ -140,6 +139,9 @@ stop_blue_blinking_flag = threading.Event() # 青色LEDの点滅停止用
 
 # 最後のログ記録時刻をグローバルで管理
 last_log_time = 0
+
+# AI自動制御が最後に待機に入った時刻
+last_ai_control_time = 0
 
 # --- BME280用キャリブレーションデータ (起動時に読み込む) ---
 dig_T1, dig_T2, dig_T3 = 0, 0, 0
@@ -309,7 +311,6 @@ def setup_bme280():
         dig_T3 = (cal1[5] << 8) | cal1[4]; 
         if dig_T3 > 32767: dig_T3 -= 65536
 
-        # --- ★★★ ここからが抜け落ちていた部分 ★★★ ---
         dig_P1 = (cal1[7] << 8) | cal1[6]
         dig_P2 = (cal1[9] << 8) | cal1[8]; 
         if dig_P2 > 32767: dig_P2 -= 65536
@@ -338,7 +339,6 @@ def setup_bme280():
         if dig_H5 > 2047: dig_H5 -= 4096
         dig_H6 = cal3[6];
         if dig_H6 > 127: dig_H6 -= 256
-        # --- ★★★ 抜け落ちていた部分はここまで ★★★ ---
 
         # センサーの動作モードを設定 (湿度x1, スタンバイ時間, 温度x1, 気圧x1, ノーマルモード)
         bus.write_byte_data(BME280_ADDRESS, 0xF2, 1)    # 湿度オーバーサンプリング x1
@@ -379,7 +379,6 @@ def read_bme280():
         temperature = t_fine / 5120.0
 
         # --- 気圧の補正計算 (データシート参照) ---
-        # --- ★★★ ここからが抜け落ちていた部分 ★★★ ---
         var1 = (t_fine / 2.0) - 64000.0
         var2 = var1 * var1 * dig_P6 / 32768.0
         var2 = var2 + var1 * dig_P5 * 2.0
@@ -394,16 +393,14 @@ def read_bme280():
             var2 = p * dig_P8 / 32768.0
             p = p + (var1 + var2 + dig_P7) / 16.0
             pressure = p / 100 # hPaに変換
-        # --- ★★★ 抜け落ちていた部分はここまで ★★★ ---
 
         # --- 湿度の補正計算 (データシート参照) ---
-        # --- ★★★ ここからが抜け落ちていた部分 ★★★ ---
         h = t_fine - 76800.0
         h = (adc_H - (dig_H4 * 64.0 + dig_H5 / 16384.0 * h)) * \
             (dig_H2 / 65536.0 * (1.0 + dig_H6 / 67108864.0 * h * \
             (1.0 + dig_H3 / 67108864.0 * h)))
         h = h * (1.0 - dig_H1 * h / 524288.0)
-        # --- ★★★ 抜け落ちていた部分はここまで ★★★ ---
+
         if h > 100: h = 100 # 0-100%の範囲に丸める
         elif h < 0: h = 0
         humidity = h
@@ -647,7 +644,6 @@ def execute_scene(scene_name, triggered_by='manual', ip_addr=None):
             update_auto_mode_led()
             log_action(source, 'モード切替', '「手動モード」に切替', ip_addr=ip_addr or '--')
         
-        # ★★★ 変更点 ★★★
         # 手動で実行したシーンを「最後に実行したシーン」として記憶する
         # (これにより、AIが同じ操作をしようとした時にスキップされる)
         last_curtain_position_command = scene_name
@@ -946,7 +942,7 @@ def operate_curtain_from_ai(predicted_label):
         print(f"[AI] 不明な制御ラベルです: {predicted_label}")
         return
 
-    # ★★★ 制御スキップ処理 ★★★
+    # --- 制御スキップ処理 ---
     # 最後に実行したシーン (手動またはAI) と同じであれば、操作をスキップする
     if target_scene == last_curtain_position_command:
         print(f"[AI] シーン '{target_scene}' は既に実行済みのためスキップします。")
@@ -978,6 +974,9 @@ def auto_control_loop():
     バックグラウンドでAIによる自動制御を定期実行するスレッド
     (AUTO_CONTROL_INTERVAL_SECONDS ごとに実行)
     """
+
+    global last_ai_control_time
+
     print("[AI] 自動制御ループを開始します。")
     while True:
         # 自動モードがONの時だけ実行
@@ -1001,7 +1000,10 @@ def auto_control_loop():
                 except requests.exceptions.RequestException as e:
                     # AIサーバーへの接続失敗 (LED点滅処理は check_ai_connection_loop が担当)
                     logging.error(f"Failed to connect to PC AI server: {e}")
-                    
+
+        # 次の実行までのカウントダウン表示用に、現在時刻を記録
+        last_ai_control_time = time.time()
+
         # 次の制御実行まで待機
         time.sleep(AUTO_CONTROL_INTERVAL_SECONDS)
 
@@ -1056,7 +1058,7 @@ def background_tasks_loop():
     
     last_lcd_update = 0 # 最後のLCD更新時刻
     
-    # ★★★ 追加: 平均値計算用のサンプリング設定 ★★★
+    # 平均値計算用のサンプリング設定
     last_sampling_time = 0 # 最後のサンプリング時刻
     sampling_interval = 10 # 10秒間隔
     # データ蓄積用リスト
@@ -1149,7 +1151,7 @@ def background_tasks_loop():
                     print(f"[Error] Failed to update LCD: {e}")
             last_lcd_update = time.time() # 更新時刻を記録
         
-        # ★★★ 追加: I2Cセンサーの10秒サンプリング処理 ★★★
+        # I2Cセンサーの10秒サンプリング処理
         if time.time() - last_sampling_time >= sampling_interval:
             # I2Cセンサーから読み取り
             t, h, p = read_bme280()
@@ -1171,7 +1173,7 @@ def background_tasks_loop():
             # 1. すべてのセンサーデータを取得 (ハブなどは瞬時値、ローカルは後で上書き)
             data_for_csv = get_all_sensor_data()
 
-            # ★★★ 変更: I2Cセンサーデータを蓄積された平均値で上書き ★★★
+            # I2Cセンサーデータを蓄積された平均値で上書き
             # リストにデータがあれば平均値を計算し、リストをクリアしてリセットする
             if sensor_samples["temp"]:
                 data_for_csv["local_temp"] = sum(sensor_samples["temp"]) / len(sensor_samples["temp"])
@@ -1199,7 +1201,7 @@ def background_tasks_loop():
             if not is_curtain_logging_paused:
                 data_for_ai = get_data_for_ai() # AI送信用の形式で再取得
                 
-                # ★重要: get_data_for_aiはread_bme280を再実行してしまうため、
+                # get_data_for_aiはread_bme280を再実行してしまうため、
                 # ここで計算した平均値(data_for_csv)で値を差し替える
                 if data_for_ai:
                     data_for_ai['local_temp_c'] = round(data_for_csv['local_temp'], 1) if data_for_csv['local_temp'] else None
@@ -1248,9 +1250,12 @@ def get_status_for_app():
     
     curtain_status = get_tuya_curtain_status()
     
-    # 次回の送信までの残り時間を計算
-    elapsed = time.time() - last_log_time
-    remaining = LOG_INTERVAL_SECONDS - elapsed
+    # AI自動制御の残り時間を計算する
+    # last_ai_control_time と AUTO_CONTROL_INTERVAL_SECONDS を使用
+    elapsed = time.time() - last_ai_control_time
+    remaining = AUTO_CONTROL_INTERVAL_SECONDS - elapsed
+
+    # マイナス（計算誤差や実行中）の場合は0にする
     if remaining < 0: remaining = 0
 
     # グローバル変数に保持されている最新の状態を返す
@@ -1261,7 +1266,7 @@ def get_status_for_app():
         'logging_paused': is_curtain_logging_paused,
         'auto_mode': is_auto_mode,
         'ai_connection_status': is_ai_connected,
-        'time_remaining': int(remaining) # 次回ログ残り秒数(整数)
+        'time_remaining': int(remaining) # 次回AI自動制御の残り時間
     })
 
 @app.route('/api/sensor_data', methods=['GET'])
@@ -1311,21 +1316,51 @@ def control_logging_from_app(action):
 @app.route('/log')
 def view_log():
     """ 操作ログ (log.html) を表示 """
+    # URLパラメータからページ番号を取得 (デフォルトは1ページ目)
+    page = request.args.get('page', 1, type=int)
+    per_page = 50 # 1ページあたりの表示件数
+    
     try:
         # CSVファイルをpandasで読み込む
+        if not os.path.exists(LOG_CSV_FILE):
+            return render_template('log.html', log_table="<p>ログファイルがまだ作成されていません。</p>", current_page=1, has_next=False, has_prev=False)
+
         df = pd.read_csv(LOG_CSV_FILE, encoding='utf-8')
+        
         # 新しいログが上に来るように逆順にする
         df = df.iloc[::-1]
+        
+        # 全体の件数とページ数を計算
+        total_rows = len(df)
+        total_pages = math.ceil(total_rows / per_page)
+        
+        # 範囲外のページ指定対策
+        if page < 1: page = 1
+        if page > total_pages and total_pages > 0: page = total_pages
+
+        # 現在のページに必要なデータを切り出す (スライス)
+        start = (page - 1) * per_page
+        end = start + per_page
+        df_subset = df.iloc[start:end]
+        
         # DataFrameをHTMLテーブルに変換
-        log_table = df.to_html(index=False, justify='left', classes='log-table')
-    except FileNotFoundError:
-        log_table = "<p>ログファイルがまだ作成されていません。</p>"
+        log_table = df_subset.to_html(index=False, justify='left', classes='log-table')
+        
+        # 次へ・前へボタンの有効無効判定
+        has_prev = (page > 1)
+        has_next = (page < total_pages)
+
     except Exception as e:
         log_table = f"<p>ログの読み込みに失敗しました: {e}</p>"
+        has_next = False
+        has_prev = False
 
-    # templates/log.html をレンダリングし、log_table変数を渡す
-    # (HTML側で {{ log_table|safe }} として展開される)
-    return render_template('log.html', log_table=log_table)
+    # テンプレートにデータを渡す
+    return render_template('log.html', 
+                           log_table=log_table, 
+                           current_page=page, 
+                           has_next=has_next, 
+                           has_prev=has_prev)
 
 @app.route('/mode/<new_mode>', methods=['POST'])
 def set_control_mode(new_mode):

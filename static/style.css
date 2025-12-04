@@ -112,7 +112,7 @@ h2 {
 }
 
 /* ================================================================== */
-/* 新しいカーテン操作パネルのデザイン (修正版)                         */
+/* カーテン操作パネルのデザイン                                          */
 /* ================================================================== */
 
 /* グループ全体のコンテナ */
@@ -251,13 +251,58 @@ body.log-page {
     justify-content: normal;
 }
 
-/* --- ログページの h1 --- */
-body.log-page h1 { 
+/* --- ヘッダーエリア (タイトルとボタンを横並びにする) --- */
+.log-header {
+    display: flex;
+    justify-content: space-between; /* 両端揃え */
+    align-items: center; /* 上下中央揃え */
     border-bottom: 1px solid #444; 
     padding-bottom: 10px; 
-    text-align: left; /* 左揃え */
-    font-size: 2em;
     margin-bottom: 20px;
+}
+
+/* --- ログページの h1 --- */
+body.log-page h1 { 
+    margin: 0; /* マージンリセット */
+    border: none; /* 下線は .log-header に表示 */
+    font-size: 1.5em;
+}
+
+/* --- ページネーションボタン --- */
+.pagination {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.page-btn {
+    padding: 8px 16px;
+    background-color: #373E47;
+    color: #cdd9e5;
+    text-decoration: none;
+    border-radius: 6px;
+    border: 1px solid #444c56;
+    font-size: 14px;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+
+.page-btn:hover:not(.disabled) {
+    background-color: #0366d6; /* ホバー時の青色 */
+    border-color: #0366d6;
+    color: white;
+}
+
+.page-btn.disabled {
+    background-color: #222;
+    color: #555;
+    cursor: default;
+    border-color: #333;
+}
+
+.page-info {
+    font-size: 14px;
+    color: #768390;
 }
 
 /* --- ログテーブル (.log-table) --- */
